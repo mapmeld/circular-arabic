@@ -162,9 +162,9 @@ for (var c = 0; c < text.length; c++) {
 for (var b = 0; b < baselineChars.length; b++) {
   var pointTo = baselineChars[b];
   ctx.beginPath();
-  var startAngle = gapPerChar * (text.length - pointTo - 1) - Math.PI / 2 + (gapPerChar / 5);
-  var endAngle = startAngle - (gapPerChar * 4/5);
-  ctx.arc(0, 0, (diameter / 2) - 20, startAngle, endAngle, true);
+  var startAngle = gapPerChar * (text.length - pointTo - 1) - Math.PI / 2 + (gapPerChar / 6);
+  var endAngle = startAngle - (gapPerChar * 5/6);
+  ctx.arc(0, 0, (diameter / 2) - 18, startAngle, endAngle, true);
   ctx.arc(0, 0, (diameter / 2) - 25, endAngle, startAngle);
   ctx.closePath();
   ctx.fill();
