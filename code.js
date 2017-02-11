@@ -85,7 +85,7 @@ function getFontForRadius(text, diameter) {
 }
 
 var text = 'أستراليا';
-text += ' ' //+ text;
+text += ' ' + text;
 
 var diameter = 300;
 
@@ -162,12 +162,10 @@ for (var c = 0; c < text.length; c++) {
 for (var b = 0; b < baselineChars.length; b++) {
   var pointTo = baselineChars[b];
   ctx.beginPath();
-  var startAngle = Math.PI - gapPerChar * pointTo;
-  var endAngle = startAngle + gapPerChar;
-  ctx.arc(0, 0, (diameter / 2) - 20, startAngle, endAngle);
-  ctx.arc(0, 0, (diameter / 2) - 25, endAngle, startAngle, true);
+  var startAngle = gapPerChar * (text.length - pointTo - 1) - Math.PI / 2 + (gapPerChar / 5);
+  var endAngle = startAngle - (gapPerChar * 4/5);
+  ctx.arc(0, 0, (diameter / 2) - 20, startAngle, endAngle, true);
+  ctx.arc(0, 0, (diameter / 2) - 25, endAngle, startAngle);
   ctx.closePath();
   ctx.fill();
-  
-  // break;
 }
