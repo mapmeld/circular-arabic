@@ -1,13 +1,17 @@
+// canvas setup
 var c = document.getElementById('circle');
 var ctx = c.getContext('2d');
 ctx.fillStyle = '#000';
 
+// in case some weird Internet Explorer thing
 if (typeof console === 'undefined') {
   console = {
     log: function() { }
   };
 }
 
+// replace individual characters with additional forms
+// thanks to miladkdz in OSM issue https://github.com/openstreetmap/iD/pull/3707/
 var arabicChars = {
     // madda above alef
     1570: {initial: "آ‎", isolated: "ﺁ", medial: "ﺁ", final: "ﺂ" },
@@ -68,31 +72,38 @@ var arabicChars = {
     5000: {initial: "ﻻ", isolated: "ﻻ", medial: "", final: "ﻼ" }
 };
 
+// increase font until the font is too big to fit the diameter
+// need to calibrate this for real
 function getFontForRadius(text, diameter) {
   for (var size = 12; size < 100; size += 2) {
     var innerDiameter = diameter - (2 * size);
     var innerCircumference = Math.PI * innerDiameter;
+    
+    // using Google Noto Font for consistent experience
     ctx.font = size + 'px Noto Naskh Arabic';
     var currentWidth = ctx.measureText(text).width;
-    // console.log(currentWidth);
     if (currentWidth > innerCircumference) {
-      // console.log(size - 2);
       return size - 2;
     }
   }
+  
+  // reached 100px
   console.log('max font size');
   return size;
 }
 
+// sample text
 var text = 'أستراليا';
 text += ' ' + text;
 
+// sample diameter (needs to be calibrated)
 var diameter = 300;
-
 var size = getFontForRadius(text, diameter);
 
+// put center of rotation at center of canvas
 ctx.translate(200, 200);
 
+// use initial, medial, final forms
 function replaceArabicChar(cr, position) {
   var codepoint = cr.charCodeAt(0);
   // console.log(cr + ' in ' + position);
@@ -103,8 +114,13 @@ function replaceArabicChar(cr, position) {
   }
 }
 
+// start out in the initial position
 var position = 'initial';
+
+// keep track of characters which will connect to others via baseline
 var baselineChars = [];
+
+// calculate the radians per char once
 var gapPerChar = 2 * Math.PI / text.length;
 
 for (var c = 0; c < text.length; c++) {
@@ -117,20 +133,23 @@ for (var c = 0; c < text.length; c++) {
     continue;
   }
   
-  // calculate which characters are the end of the line
+  // calculate if the character I'll print is at the end of the line
   if (position !== 'initial' && (c + 1 === text.length || !arabicChars[text.charCodeAt(c + 1)] || !arabicChars[text.charCodeAt(c)].medial)) {
     position = 'final';
   }
+  
+  // if the previous character doesn't join to me, I must be an initial
   if (position === 'medial' && (!arabicChars[text.charCodeAt(c - 1)] || !arabicChars[text.charCodeAt(c - 1)].medial)) {
     position = 'initial';
   }
   
+  // run replace function based on calculated position
   var insertChar = replaceArabicChar(text[c], position);
 
   // measure width of the character
   var charWidth = ctx.measureText(insertChar).width;
   
-  // if I made a huge mistake and the character doesn't exist, restore original char
+  // if I made a huge mistake and the character doesn't exist, use the original char
   if (!charWidth) {
     insertChar = text[c];
     charWidth = ctx.measureText(insertChar).width;
@@ -139,31 +158,31 @@ for (var c = 0; c < text.length; c++) {
   // paint onto canvas
   ctx.fillText(insertChar, (charWidth / -2), -370 + (400 - diameter / 2));
   
+  if (position !== 'final' && arabicChars[text.charCodeAt(c)] && arabicChars[text.charCodeAt(c)].medial) {
+    // note for baseline continuation
+    baselineChars.push(c);
+  }
+  
   // prep for the next character position
   if (position === 'final') {
     position = 'initial';
   } else {
     position = 'medial';
   }
-  
-  if (position !== 'final' && arabicChars[text.charCodeAt(c)] && arabicChars[text.charCodeAt(c)].medial) {
-    // note for baseline continuation
-    baselineChars.push(c);
-  }
-  
-  /*
-  var s = document.createElement('span');
-  s.innerHTML = insertChar;
-  document.body.appendChild(s);
-  */
 }
 
 // console.log(baselineChars);
+
+// draw all of the baseline curves now
+var arcSeparationFromLetterCenter = gapPerChar / 6;
 for (var b = 0; b < baselineChars.length; b++) {
   var pointTo = baselineChars[b];
   ctx.beginPath();
-  var startAngle = gapPerChar * (text.length - pointTo - 1) - Math.PI / 2 + (gapPerChar / 6);
-  var endAngle = startAngle - (gapPerChar * 5/6);
+  var startAngle = gapPerChar * (text.length - pointTo - 1) - Math.PI / 2 + arcSeparationFromLetterCenter;
+  var endAngle = startAngle - gapPerChar + arcSeparationFromLetterCenter;
+  
+  // still some 'magic numbers' here on distance from center, width of baseline
+  // should adjust to font size / diameter
   ctx.arc(0, 0, (diameter / 2) - 18, startAngle, endAngle, true);
   ctx.arc(0, 0, (diameter / 2) - 25, endAngle, startAngle);
   ctx.closePath();
