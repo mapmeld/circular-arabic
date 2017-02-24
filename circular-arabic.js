@@ -1,7 +1,13 @@
 // canvas setup
-var c = document.getElementById('circle');
-var ctx = c.getContext('2d');
+var canv = document.getElementById('outie');
+var ctx = canv.getContext('2d');
 ctx.fillStyle = '#000';
+ctx.translate(200, 200);
+
+var innie = document.getElementById('innie');
+var ctx2 = innie.getContext('2d');
+ctx2.fillStyle = '#000';
+ctx2.translate(200, 200);
 
 // in case some weird Internet Explorer thing
 if (typeof console === 'undefined') {
@@ -80,7 +86,8 @@ function getFontForRadius(text, diameter) {
     var innerCircumference = Math.PI * innerDiameter;
     
     // using Google Noto Font for consistent experience
-    ctx.font = size + 'px Noto Naskh Arabic';
+    ctx.font = size + 'px Noto Naskh Arabic Regular';
+    ctx2.font = (size - 2) + 'px Noto Naskh Arabic Regular';
     var currentWidth = ctx.measureText(text).width;
     if (currentWidth > innerCircumference) {
       return size - 2;
@@ -99,9 +106,6 @@ text += ' ' + text;
 // sample diameter (needs to be calibrated)
 var diameter = 300;
 var size = getFontForRadius(text, diameter);
-
-// put center of rotation at center of canvas
-ctx.translate(200, 200);
 
 // use initial, medial, final forms
 function replaceArabicChar(cr, position) {
@@ -126,6 +130,7 @@ var gapPerChar = 2 * Math.PI / text.length;
 for (var c = 0; c < text.length; c++) {
   // rotate the circle evenly
   ctx.rotate(-1 * gapPerChar);
+  ctx2.rotate(gapPerChar);
   
   // handle whitespace
   if (text[c].match(/\s/)) {
@@ -157,6 +162,7 @@ for (var c = 0; c < text.length; c++) {
   
   // paint onto canvas
   ctx.fillText(insertChar, (charWidth / -2), -370 + (400 - diameter / 2));
+  ctx2.fillText(insertChar, (charWidth / -2), 370 - (350 - diameter / 2));
   
   if (position !== 'final' && arabicChars[text.charCodeAt(c)] && arabicChars[text.charCodeAt(c)].medial) {
     // note for baseline continuation
@@ -177,14 +183,19 @@ for (var c = 0; c < text.length; c++) {
 var arcSeparationFromLetterCenter = gapPerChar / 6;
 for (var b = 0; b < baselineChars.length; b++) {
   var pointTo = baselineChars[b];
-  ctx.beginPath();
   var startAngle = gapPerChar * (text.length - pointTo - 1) - Math.PI / 2 + arcSeparationFromLetterCenter;
   var endAngle = startAngle - gapPerChar + arcSeparationFromLetterCenter;
   
   // still some 'magic numbers' here on distance from center, width of baseline
   // should adjust to font size / diameter
+  ctx.beginPath();
   ctx.arc(0, 0, (diameter / 2) - 18, startAngle, endAngle, true);
   ctx.arc(0, 0, (diameter / 2) - 25, endAngle, startAngle);
   ctx.closePath();
   ctx.fill();
+  
+  ctx2.beginPath();
+  ctx2.arc(0, 0, (diameter / 2) + 10, -1 * startAngle, -1 * endAngle + arcSeparationFromLetterCenter);
+  ctx2.arc(0, 0, (diameter / 2) + 16, -1 * endAngle + arcSeparationFromLetterCenter, -1 * startAngle, true);
+  ctx2.fill();
 }
