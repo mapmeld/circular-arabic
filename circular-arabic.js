@@ -16,6 +16,8 @@ if (typeof console === 'undefined') {
   };
 }
 
+var arabicTashkil = "َِّْ‎";
+
 // replace individual characters with additional forms
 // thanks to miladkdz in OSM issue https://github.com/openstreetmap/iD/pull/3707/
 var arabicChars = {
@@ -100,8 +102,7 @@ function getFontForRadius(text, diameter) {
 }
 
 // sample text
-var text = 'أستراليا';
-text += ' ' + text;
+var text = 'الأَبْجَدِيَّة العَرَبِيَّة‎‎';
 
 // sample diameter (needs to be calibrated)
 var diameter = 300;
@@ -125,19 +126,43 @@ var position = 'initial';
 var baselineChars = [];
 
 // calculate the radians per char once
-var gapPerChar = 2 * Math.PI / text.length;
+var letterLengthTest = text;
+for (var i = 0; i < arabicTashkil.length; i++) {
+  letterLengthTest = letterLengthTest.replace(new RegExp(arabicTashkil[i], 'g'), '');
+}
+text = letterLengthTest;
+var letterLength = letterLengthTest.length;
+var gapPerChar = 2 * Math.PI / letterLength;
 
+// LA fix
+if (text.substring(0, 2) === 'لا') {
+  text = text.replace('لا', 'ﻻ');
+}
+text = text.replace(/\sلا/g, ' ﻻ');
+text = text.replace(/لا/g, 'ﻼ');
+
+var letterSpace = -1;
 for (var c = 0; c < text.length; c++) {
   // rotate the circle evenly
-  ctx.rotate(-1 * gapPerChar);
-  ctx2.rotate(gapPerChar);
+  if (arabicTashkil.indexOf(text[c]) === -1) {
+    ctx.rotate(-1 * gapPerChar);
+    ctx2.rotate(gapPerChar);
+    letterSpace++;
+  } else {
+    // tashkil mark
+    var insertChar = text[c];
+    var charWidth = ctx.measureText(insertChar).width
+    ctx.fillText(insertChar, (charWidth / -2), -370 + (400 - diameter / 2));
+    ctx2.fillText(insertChar, (charWidth / -2), 370 - (350 - diameter / 2));
+    continue;
+  }
   
   // handle whitespace
   if (text[c].match(/\s/)) {
     position = 'initial';
     continue;
   }
-  
+    
   // calculate if the character I'll print is at the end of the line
   if (position !== 'initial' && (c + 1 === text.length || !arabicChars[text.charCodeAt(c + 1)] || !arabicChars[text.charCodeAt(c)].medial)) {
     position = 'final';
@@ -166,7 +191,7 @@ for (var c = 0; c < text.length; c++) {
   
   if (position !== 'final' && arabicChars[text.charCodeAt(c)] && arabicChars[text.charCodeAt(c)].medial) {
     // note for baseline continuation
-    baselineChars.push(c);
+    baselineChars.push(letterSpace);
   }
   
   // prep for the next character position
@@ -183,7 +208,7 @@ for (var c = 0; c < text.length; c++) {
 var arcSeparationFromLetterCenter = gapPerChar / 6;
 for (var b = 0; b < baselineChars.length; b++) {
   var pointTo = baselineChars[b];
-  var startAngle = gapPerChar * (text.length - pointTo - 1) - Math.PI / 2 + arcSeparationFromLetterCenter;
+  var startAngle = gapPerChar * (letterLength - pointTo - 1) - Math.PI / 2 + arcSeparationFromLetterCenter;
   var endAngle = startAngle - gapPerChar + arcSeparationFromLetterCenter;
   
   // still some 'magic numbers' here on distance from center, width of baseline
