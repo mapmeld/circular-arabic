@@ -130,7 +130,6 @@ var letterLengthTest = text;
 for (var i = 0; i < arabicTashkil.length; i++) {
   letterLengthTest = letterLengthTest.replace(new RegExp(arabicTashkil[i], 'g'), '');
 }
-text = letterLengthTest;
 var letterLength = letterLengthTest.length;
 var gapPerChar = 2 * Math.PI / letterLength;
 
@@ -140,6 +139,26 @@ if (text.substring(0, 2) === 'لا') {
 }
 text = text.replace(/\sلا/g, ' ﻻ');
 text = text.replace(/لا/g, 'ﻼ');
+  
+function nextFullLetter(word) {
+  for (var w = 0; w < word.length; w++) {
+    if (arabicTashkil.indexOf(word[w]) > -1) {
+      continue;
+    }
+    return word.charCodeAt(w);
+  }
+  return null;
+}
+
+function lastFullLetter(word) {
+  for (var w = word.length - 1; w >= 0; w--) {
+    if (arabicTashkil.indexOf(word[w]) > -1) {
+      continue;
+    }
+    return word.charCodeAt(w);
+  }
+  return null;
+}
 
 var letterSpace = -1;
 for (var c = 0; c < text.length; c++) {
@@ -151,7 +170,7 @@ for (var c = 0; c < text.length; c++) {
   } else {
     // tashkil mark
     var insertChar = text[c];
-    var charWidth = ctx.measureText(insertChar).width
+    var charWidth = 2;
     ctx.fillText(insertChar, (charWidth / -2), -370 + (400 - diameter / 2));
     ctx2.fillText(insertChar, (charWidth / -2), 370 - (350 - diameter / 2));
     continue;
@@ -164,12 +183,13 @@ for (var c = 0; c < text.length; c++) {
   }
     
   // calculate if the character I'll print is at the end of the line
-  if (position !== 'initial' && (c + 1 === text.length || !arabicChars[text.charCodeAt(c + 1)] || !arabicChars[text.charCodeAt(c)].medial)) {
+  if (position !== 'initial' && (!nextFullLetter(text.substring(c + 1)) || !arabicChars[nextFullLetter(text.substring(c + 1))] || !arabicChars[text.charCodeAt(c)].medial
+  )) {
     position = 'final';
   }
   
   // if the previous character doesn't join to me, I must be an initial
-  if (position === 'medial' && (!arabicChars[text.charCodeAt(c - 1)] || !arabicChars[text.charCodeAt(c - 1)].medial)) {
+  if (position === 'medial' && (!arabicChars[lastFullLetter(text.substring(0, c))] || !arabicChars[lastFullLetter(text.substring(0, c))].medial)) {
     position = 'initial';
   }
   
