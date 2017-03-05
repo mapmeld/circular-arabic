@@ -9,10 +9,11 @@
 
       html, body {
         width: 100%;
-        font-family: 'Noto Naskh Arabic Regular';
+        font-family: 'Noto Naskh Arabic';
       }
       canvas {
         border: 1px solid #000;
+        font-family: 'Noto Naskh Arabic';
       }
       #outie {
         float: left;
@@ -28,5 +29,20 @@
     <canvas id="innie" height="400" width="400">
     </canvas>
     <script src="circular-arabic.js"></script>
+    <script>
+// doing the 'outie' style
+var canv = document.getElementById('outie');
+var ctx = canv.getContext('2d');
+ctx.fillStyle = '#000';
+ctx.translate(200, 200);
+ArabicCircle(ctx, 'أستراليا أستراليا', 300, -1);
+
+// doing the 'innie' style
+var innie = document.getElementById('innie');
+var ctx2 = innie.getContext('2d');
+ctx2.fillStyle = '#000';
+ctx2.translate(200, 200);
+ArabicCircle(ctx2, 'الأَبْجَدِيَّة العَرَبِيَّة‎‎', 300, 1);
+    </script>
   </body>
 </html>

@@ -1,26 +1,8 @@
-// canvas setup
-var canv = document.getElementById('outie');
-var ctx = canv.getContext('2d');
-ctx.fillStyle = '#000';
-ctx.translate(200, 200);
-
-var innie = document.getElementById('innie');
-var ctx2 = innie.getContext('2d');
-ctx2.fillStyle = '#000';
-ctx2.translate(200, 200);
-
-// in case some weird Internet Explorer thing
-if (typeof console === 'undefined') {
-  console = {
-    log: function() { }
-  };
-}
-
-var arabicTashkil = "َِّْ‎";
+const arabicTashkil = "َِّْ‎";
 
 // replace individual characters with additional forms
 // thanks to miladkdz in OSM issue https://github.com/openstreetmap/iD/pull/3707/
-var arabicChars = {
+const arabicChars = {
     // madda above alef
     1570: {initial: "آ‎", isolated: "ﺁ", medial: "ﺁ", final: "ﺂ" },
     
@@ -88,8 +70,8 @@ function getFontForRadius(text, diameter) {
     var innerCircumference = Math.PI * innerDiameter;
     
     // using Google Noto Font for consistent experience
-    ctx.font = size + 'px Noto Naskh Arabic Regular';
-    ctx2.font = (size - 2) + 'px Noto Naskh Arabic Regular';
+    ctx.font = size + 'px Noto Naskh Arabic';
+    ctx2.font = (size - 2) + 'px Noto Naskh Arabic';
     var currentWidth = ctx.measureText(text).width;
     if (currentWidth > innerCircumference) {
       return size - 2;
@@ -100,13 +82,6 @@ function getFontForRadius(text, diameter) {
   console.log('max font size');
   return size;
 }
-
-// sample text
-var text = 'الأَبْجَدِيَّة العَرَبِيَّة‎‎';
-
-// sample diameter (needs to be calibrated)
-var diameter = 300;
-var size = getFontForRadius(text, diameter);
 
 // use initial, medial, final forms
 function replaceArabicChar(cr, position) {
@@ -119,27 +94,7 @@ function replaceArabicChar(cr, position) {
   }
 }
 
-// start out in the initial position
-var position = 'initial';
-
-// keep track of characters which will connect to others via baseline
-var baselineChars = [];
-
-// calculate the radians per char once
-var letterLengthTest = text;
-for (var i = 0; i < arabicTashkil.length; i++) {
-  letterLengthTest = letterLengthTest.replace(new RegExp(arabicTashkil[i], 'g'), '');
-}
-var letterLength = letterLengthTest.length;
-var gapPerChar = 2 * Math.PI / letterLength;
-
-// LA fix
-if (text.substring(0, 2) === 'لا') {
-  text = text.replace('لا', 'ﻻ');
-}
-text = text.replace(/\sلا/g, ' ﻻ');
-text = text.replace(/لا/g, 'ﻼ');
-  
+// skip forward or backward in word to avoid tashkil characters
 function nextFullLetter(word) {
   for (var w = 0; w < word.length; w++) {
     if (arabicTashkil.indexOf(word[w]) > -1) {
@@ -160,87 +115,130 @@ function lastFullLetter(word) {
   return null;
 }
 
-var letterSpace = -1;
-for (var c = 0; c < text.length; c++) {
-  // rotate the circle evenly
-  if (arabicTashkil.indexOf(text[c]) === -1) {
-    ctx.rotate(-1 * gapPerChar);
-    ctx2.rotate(gapPerChar);
-    letterSpace++;
-  } else {
-    // tashkil mark
-    var insertChar = text[c];
-    var charWidth = 2;
-    ctx.fillText(insertChar, (charWidth / -2), -370 + (400 - diameter / 2));
-    ctx2.fillText(insertChar, (charWidth / -2), 370 - (350 - diameter / 2));
-    continue;
+function ArabicCircle(ctx, text, diameter, orientation) {
+  if (!diameter) {
+    diameter = 300;
+  }
+  if (!orientation) {
+    orientation = 1;
+  }
+  if (orientation !== 1) {
+    orientation = -1;
   }
   
-  // handle whitespace
-  if (text[c].match(/\s/)) {
-    position = 'initial';
-    continue;
-  }
-    
-  // calculate if the character I'll print is at the end of the line
-  if (position !== 'initial' && (!nextFullLetter(text.substring(c + 1)) || !arabicChars[nextFullLetter(text.substring(c + 1))] || !arabicChars[text.charCodeAt(c)].medial
-  )) {
-    position = 'final';
-  }
-  
-  // if the previous character doesn't join to me, I must be an initial
-  if (position === 'medial' && (!arabicChars[lastFullLetter(text.substring(0, c))] || !arabicChars[lastFullLetter(text.substring(0, c))].medial)) {
-    position = 'initial';
-  }
-  
-  // run replace function based on calculated position
-  var insertChar = replaceArabicChar(text[c], position);
+  var size = getFontForRadius(text, diameter);
 
-  // measure width of the character
-  var charWidth = ctx.measureText(insertChar).width;
-  
-  // if I made a huge mistake and the character doesn't exist, use the original char
-  if (!charWidth) {
-    insertChar = text[c];
-    charWidth = ctx.measureText(insertChar).width;
+  // start out in the initial position
+  var position = 'initial';
+
+  // keep track of characters which will connect to others via baseline
+  var baselineChars = [];
+
+  // calculate the radians per char once
+  var letterLengthTest = text;
+  for (var i = 0; i < arabicTashkil.length; i++) {
+    letterLengthTest = letterLengthTest.replace(new RegExp(arabicTashkil[i], 'g'), '');
   }
-  
-  // paint onto canvas
-  ctx.fillText(insertChar, (charWidth / -2), -370 + (400 - diameter / 2));
-  ctx2.fillText(insertChar, (charWidth / -2), 370 - (350 - diameter / 2));
-  
-  if (position !== 'final' && arabicChars[text.charCodeAt(c)] && arabicChars[text.charCodeAt(c)].medial) {
-    // note for baseline continuation
-    baselineChars.push(letterSpace);
+  var letterLength = letterLengthTest.length;
+  var gapPerChar = 2 * Math.PI / letterLength;
+
+  // LA fix
+  if (text.substring(0, 2) === 'لا') {
+    text = text.replace('لا', 'ﻻ');
   }
+  text = text.replace(/\sلا/g, ' ﻻ');
+  text = text.replace(/لا/g, 'ﻼ');
+
+  var charWidth;
+  var letterSpace = -1;
   
-  // prep for the next character position
-  if (position === 'final') {
-    position = 'initial';
-  } else {
-    position = 'medial';
+  for (var c = 0; c < text.length; c++) {
+    // rotate the circle evenly
+    if (arabicTashkil.indexOf(text[c]) === -1) {
+      ctx.rotate(orientation * gapPerChar);
+      letterSpace++;
+    } else {
+      // tashkil mark
+      var insertChar = text[c];
+      var charWidth = 2;
+      ctx.fillText(insertChar, (charWidth / -2), (370 * orientation) - (orientation * (350 - diameter / 2)));
+      continue;
+    }
+  
+    // handle whitespace
+    if (text[c].match(/\s/)) {
+      position = 'initial';
+      continue;
+    }
+    
+    // calculate if the character I'll print is at the end of the line
+    if (position !== 'initial' && (!nextFullLetter(text.substring(c + 1)) || !arabicChars[nextFullLetter(text.substring(c + 1))] || !arabicChars[text.charCodeAt(c)].medial)) {
+      position = 'final';
+    }
+  
+    // if the previous character doesn't join to me, I must be an initial
+    if (position === 'medial' && (!arabicChars[lastFullLetter(text.substring(0, c))] || !arabicChars[lastFullLetter(text.substring(0, c))].medial)) {
+      position = 'initial';
+    }
+  
+    // run replace function based on calculated position
+    var insertChar = replaceArabicChar(text[c], position);
+
+    // measure width of the character
+    if (arabicTashkil.indexOf(insertChar) === -1) {
+      charWidth = ctx.measureText(insertChar).width;
+    }
+  
+    // if I made a huge mistake and the character doesn't exist, use the original char
+    if (!charWidth) {
+      insertChar = text[c];
+      charWidth = ctx.measureText(insertChar).width;
+    }
+  
+    // paint onto canvas
+    var warpSize = 350;
+    if (orientation === -1) {
+      warpSize = 400;
+    }
+    ctx.fillText(insertChar, (charWidth / -2), (orientation * 370) - (orientation * (warpSize - diameter / 2)));
+  
+    if (position !== 'final' && arabicChars[text.charCodeAt(c)] && arabicChars[text.charCodeAt(c)].medial) {
+      // note for baseline continuation
+      baselineChars.push(letterSpace);
+    }
+  
+    // prep for the next character position
+    if (position === 'final') {
+      position = 'initial';
+    } else {
+      position = 'medial';
+    }
+  }
+
+  // draw all of the baseline curves now
+  var arcSeparationFromLetterCenter = gapPerChar / 6;
+  for (var b = 0; b < baselineChars.length; b++) {
+    var pointTo = baselineChars[b];
+    var startAngle = gapPerChar * (letterLength - pointTo - 1) - Math.PI / 2 + arcSeparationFromLetterCenter;
+    var endAngle = startAngle - gapPerChar + arcSeparationFromLetterCenter;
+  
+    // still some 'magic numbers' here on distance from center, width of baseline
+    // should adjust to font size / diameter  
+    ctx.beginPath();
+    if (orientation === 1) {
+      // innie
+      ctx.arc(0, 0, (diameter / 2) + 10, -1 * startAngle, -1 * endAngle + arcSeparationFromLetterCenter);
+      ctx.arc(0, 0, (diameter / 2) + 16, -1 * endAngle + arcSeparationFromLetterCenter, -1 * startAngle, true);
+    } else {
+      // outie
+      ctx.arc(0, 0, (diameter / 2) - 18, startAngle, endAngle, true);
+      ctx.arc(0, 0, (diameter / 2) - 25, endAngle, startAngle);
+    }
+    ctx.closePath();
+    ctx.fill();
   }
 }
 
-// console.log(baselineChars);
-
-// draw all of the baseline curves now
-var arcSeparationFromLetterCenter = gapPerChar / 6;
-for (var b = 0; b < baselineChars.length; b++) {
-  var pointTo = baselineChars[b];
-  var startAngle = gapPerChar * (letterLength - pointTo - 1) - Math.PI / 2 + arcSeparationFromLetterCenter;
-  var endAngle = startAngle - gapPerChar + arcSeparationFromLetterCenter;
-  
-  // still some 'magic numbers' here on distance from center, width of baseline
-  // should adjust to font size / diameter
-  ctx.beginPath();
-  ctx.arc(0, 0, (diameter / 2) - 18, startAngle, endAngle, true);
-  ctx.arc(0, 0, (diameter / 2) - 25, endAngle, startAngle);
-  ctx.closePath();
-  ctx.fill();
-  
-  ctx2.beginPath();
-  ctx2.arc(0, 0, (diameter / 2) + 10, -1 * startAngle, -1 * endAngle + arcSeparationFromLetterCenter);
-  ctx2.arc(0, 0, (diameter / 2) + 16, -1 * endAngle + arcSeparationFromLetterCenter, -1 * startAngle, true);
-  ctx2.fill();
+if (typeof module !== 'undefined') {
+  module.exports = ArabicCircle;
 }

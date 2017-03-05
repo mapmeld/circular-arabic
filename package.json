@@ -1,0 +1,27 @@
+{
+  "name": "circular-arabic",
+  "version": "1.0.0",
+  "description": "Write Arabic text in a circular image",
+  "main": "circular-arabic.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mapmeld/circular-arabic.git"
+  },
+  "keywords": [
+    "arabic",
+    "canvas",
+    "calligraphy"
+  ],
+  "author": "Nick Doiron <ndoiron@mapmeld.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mapmeld/circular-arabic/issues"
+  },
+  "homepage": "https://github.com/mapmeld/circular-arabic#readme",
+  "dependencies": {
+    "canvas": "^1.6.4"
+  }
+}
