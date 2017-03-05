@@ -62,27 +62,6 @@ const arabicChars = {
     5000: {initial: "ﻻ", isolated: "ﻻ", medial: "", final: "ﻼ" }
 };
 
-// increase font until the font is too big to fit the diameter
-// need to calibrate this for real
-function getFontForRadius(text, diameter) {
-  for (var size = 12; size < 100; size += 2) {
-    var innerDiameter = diameter - (2 * size);
-    var innerCircumference = Math.PI * innerDiameter;
-    
-    // using Google Noto Font for consistent experience
-    ctx.font = size + 'px Noto Naskh Arabic';
-    ctx2.font = (size - 2) + 'px Noto Naskh Arabic';
-    var currentWidth = ctx.measureText(text).width;
-    if (currentWidth > innerCircumference) {
-      return size - 2;
-    }
-  }
-  
-  // reached 100px
-  console.log('max font size');
-  return size;
-}
-
 // use initial, medial, final forms
 function replaceArabicChar(cr, position) {
   var codepoint = cr.charCodeAt(0);
@@ -126,6 +105,30 @@ function ArabicCircle(ctx, text, diameter, orientation) {
     orientation = -1;
   }
   
+  
+  // increase font until the font is too big to fit the diameter
+  // need to calibrate this for real
+  function getFontForRadius(text, diameter) {
+    for (var size = 12; size < 100; size += 2) {
+      var innerDiameter = diameter - (2 * size);
+      var innerCircumference = Math.PI * innerDiameter;
+    
+      // using Google Noto Font for consistent experience
+      if (orientation === -1) {
+        ctx.font = size + 'px Noto Naskh Arabic';
+      } else {
+        ctx.font = (size - 2) + 'px Noto Naskh Arabic';
+      }
+      var currentWidth = ctx.measureText(text).width;
+      if (currentWidth > innerCircumference) {
+        return size - 2;
+      }
+    }
+  
+    // reached 100px
+    console.log('max font size');
+    return size;
+  }
   var size = getFontForRadius(text, diameter);
 
   // start out in the initial position

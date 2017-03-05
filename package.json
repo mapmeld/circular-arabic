@@ -1,6 +1,6 @@
 {
   "name": "circular-arabic",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Write Arabic text in a circular image",
   "main": "circular-arabic.js",
   "scripts": {
