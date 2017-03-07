@@ -137,20 +137,27 @@ function ArabicCircle(ctx, text, diameter, orientation) {
   // keep track of characters which will connect to others via baseline
   var baselineChars = [];
 
+  // LA fixes
+  var LAcombinations = [
+    ['لا', 'ﻻ', 'ﻼ'], // plain alef
+    ['لﺁ', 'ﻵ', 'ﻶ'], // madda above
+    ['لﺃ', 'ﻷ', 'ﻸ'], // hamza above
+    ['لﺇ', 'ﻹ', 'ﻺ'], // hamza below
+    ['لآ', 'ﻵ', 'ﻶ'], // madda above again
+    ['لأ', 'ﻷ', 'ﻸ'], // hamza above again
+    ['لإ', 'ﻹ', 'ﻺ'] // hamza below again
+  ];
+
   // calculate the radians per char once
   var letterLengthTest = text;
   for (var i = 0; i < arabicTashkil.length; i++) {
     letterLengthTest = letterLengthTest.replace(new RegExp(arabicTashkil[i], 'g'), '');
   }
+  for (var i = 0; i < LAcombinations.length; i++) {
+    letterLengthTest = letterLengthTest.replace(new RegExp(LAcombinations[i][0], 'g'), '_');
+  }
   var letterLength = letterLengthTest.length;
   var gapPerChar = 2 * Math.PI / letterLength;
-
-  // LA fix
-  if (text.substring(0, 2) === 'لا') {
-    text = text.replace('لا', 'ﻻ');
-  }
-  text = text.replace(/\sلا/g, ' ﻻ');
-  text = text.replace(/لا/g, 'ﻼ');
 
   var charWidth;
   var letterSpace = -1;
@@ -174,18 +181,38 @@ function ArabicCircle(ctx, text, diameter, orientation) {
       continue;
     }
     
-    // calculate if the character I'll print is at the end of the line
-    if (position !== 'initial' && (!nextFullLetter(text.substring(c + 1)) || !arabicChars[nextFullLetter(text.substring(c + 1))] || !arabicChars[text.charCodeAt(c)].medial)) {
-      position = 'final';
-    }
+    var insertChar = text[c];
+    // modify position?
+    if (arabicChars[insertChar.charCodeAt(0)]) {
+      // calculate if the character I'll print is at the end of the line
+      if (position !== 'initial' && (!nextFullLetter(text.substring(c + 1)) || !arabicChars[nextFullLetter(text.substring(c + 1))] || !arabicChars[text.charCodeAt(c)].medial)) {
+        position = 'final';
+      }
   
-    // if the previous character doesn't join to me, I must be an initial
-    if (position === 'medial' && (!arabicChars[lastFullLetter(text.substring(0, c))] || !arabicChars[lastFullLetter(text.substring(0, c))].medial)) {
-      position = 'initial';
-    }
+      // if the previous character doesn't join to me, I must be an initial
+      if (position === 'medial' && (!arabicChars[lastFullLetter(text.substring(0, c))] || !arabicChars[lastFullLetter(text.substring(0, c))].medial)) {
+        position = 'initial';
+      }
   
-    // run replace function based on calculated position
-    var insertChar = replaceArabicChar(text[c], position);
+      // run replace function based on calculated position
+      insertChar = replaceArabicChar(text[c], position);
+    }
+    
+    // LA check
+    if (text[c] === 'ل') {
+      for (var x = 0; x < LAcombinations.length; x++) {
+        if (text.substring(c, c + 2) === LAcombinations[x][0]) {
+          if (position === 'initial') {
+            insertChar = LAcombinations[x][1];
+            c++;
+          } else {
+            insertChar = LAcombinations[x][2];
+            c++;
+          }
+          break;
+        }
+      }
+    }
 
     // measure width of the character
     if (arabicTashkil.indexOf(insertChar) === -1) {
