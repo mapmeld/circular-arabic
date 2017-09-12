@@ -1,5 +1,7 @@
 # circular-arabic
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/mapmeld/circular-arabic.svg)](https://greenkeeper.io/)
+
 JavaScript and a web font to print Arabic script text in a circle.
 
 This is somewhat more difficult than you'd expect... when printing Arabic characters one-by-one,
