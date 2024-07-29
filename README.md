@@ -1,6 +1,6 @@
 # circular-arabic
 
-JavaScript and a web font to print Arabic script text in a circle.
+JavaScript and web font to print Arabic script text in a circle.
 
 This is somewhat more difficult than you'd expect... when printing Arabic characters one-by-one,
 you need appropriate text-shaping (selecting the right glyph) to show the letters joining to each
